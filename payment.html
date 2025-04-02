@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment & Delivery Tracking</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(120deg, #ff9a9e, #fad0c4);
+            margin: 0;
+            padding: 20px;
+            color: #fff;
+        }
+        .container {
+            width: 50%;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            color: #333;
+        }
+        .pay-btn {
+            padding: 12px 25px;
+            font-size: 18px;
+            background: #ff5733;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s ease-in-out;
+        }
+        .pay-btn:hover {
+            background: #d43f00;
+        }
+        .help-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: 0.3s ease-in-out;
+        }
+        .help-btn:hover {
+            background: #0056b3;
+        }
+        .tracking {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        #map {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+    </style>
+    <script>
+        let map, deliveryMarker;
+
+        function loadSelectedItems() {
+            let selectedItems = JSON.parse(localStorage.getItem("selectedItems")) || [];
+            let totalAmount = Number(localStorage.getItem("totalAmount")) || 0;
+            let deliveryCharge = 70;
+            let itemList = document.getElementById("item-list");
+            itemList.innerHTML = "";
+
+            if (selectedItems.length === 0) {
+                itemList.innerHTML = "<p>No items selected.</p>";
+                document.getElementById("total-amount").innerText = "Total: ₹0";
+                return;
+            }
+
+            selectedItems.forEach(item => {
+                let itemElement = document.createElement("p");
+                itemElement.innerText = `${item.name} - ₹${item.price}`;
+                itemList.appendChild(itemElement);
+            });
+
+            let deliveryElement = document.createElement("p");
+            deliveryElement.innerHTML = `<b>Delivery Charge - ₹${deliveryCharge}</b>`;
+            itemList.appendChild(deliveryElement);
+
+            document.getElementById("total-amount").innerText = "Total: ₹" + (totalAmount + deliveryCharge);
+        }
+
+        function initMap() {
+            let customerLocation = { lat: 12.9716, lng: 77.5946 };  // Example: Customer's location (Bangalore)
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 14,
+                center: customerLocation
+            });
+
+            deliveryMarker = new google.maps.Marker({
+                position: { lat: 12.9616, lng: 77.5800 },  // Example: Starting location of delivery boy
+                map: map,
+                icon: "https://maps.google.com/mapfiles/ms/icons/bike.png",
+                title: "Delivery Boy"
+            });
+
+            simulateDelivery();
+        }
+
+        function simulateDelivery() {
+            let route = [
+                { lat: 12.9616, lng: 77.5800 },
+                { lat: 12.9650, lng: 77.5850 },
+                { lat: 12.9700, lng: 77.5900 },
+                { lat: 12.9716, lng: 77.5946 }  // Customer's Location
+            ];
+
+            let index = 0;
+            let trackingStatus = document.getElementById("tracking-status");
+
+            function moveMarker() {
+                if (index < route.length) {
+                    let position = route[index];
+                    deliveryMarker.setPosition(position);
+                    map.panTo(position);
+
+                    if (index === route.length - 1) {
+                        trackingStatus.innerHTML = "🎉 Your order has been delivered! Enjoy your meal! 🍽️";
+                    } else {
+                        trackingStatus.innerHTML = `🚀 Delivery on the way! Current location: <b>Lat: ${position.lat}, Lng: ${position.lng}</b>`;
+                    }
+
+                    index++;
+                    setTimeout(moveMarker, 5000); // Move every 5 seconds
+                }
+            }
+
+            setTimeout(moveMarker, 5000);
+        }
+
+        function payNow() {
+            let payBtn = document.getElementById("pay-btn");
+            let trackingStatus = document.getElementById("tracking-status");
+
+            payBtn.disabled = true;
+            trackingStatus.innerHTML = "🟡 Processing payment...";
+
+            setTimeout(() => {
+                trackingStatus.innerHTML = "✅ Payment successful! Order is being prepared...";
+                setTimeout(initMap, 5000); // Start tracking after 5 sec
+            }, 5000);
+        }
+
+        window.onload = loadSelectedItems;
+    </script>
+</head>
+<body>
+    <h1>Payment & Live Tracking</h1>
+    <div class="container">
+        <h2>Selected Items</h2>
+        <div id="item-list"></div>
+        <p id="total-amount" class="price">Total: ₹0</p>
+        <button class="pay-btn" id="pay-btn" onclick="payNow()">Pay Now</button>
+
+        <h2>Live Tracking</h2>
+        <p id="tracking-status" class="tracking">Tracking will be available after payment.</p>
+
+        <div id="map"></div>
+
+        <!-- Help & Support Button -->
+        <a href="help.html" class="help-btn">Need Help?</a>
+    </div>
+</body>
+</html>
